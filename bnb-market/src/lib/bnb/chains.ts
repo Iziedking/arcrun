@@ -36,7 +36,7 @@ export const BNB_CHAINS: readonly BnbNetwork[] = [
     shortLabel: "Testnet",
     symbol: "tBNB",
     explorer: "https://testnet.bscscan.com",
-    rpc: process.env.NEXT_PUBLIC_BNB_TESTNET_RPC_URL ?? "https://data-seed-prebsc-1-s1.binance.org:8545",
+    rpc: process.env.NEXT_PUBLIC_BNB_TESTNET_RPC_URL ?? "https://bsc-testnet-rpc.publicnode.com",
     nativeToken: "tBNB",
     description: "Safe rehearsal network for all public smoke tests and dry-run flow.",
     isMainnet: false,

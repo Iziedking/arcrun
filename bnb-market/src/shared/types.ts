@@ -7,6 +7,16 @@ export const CATEGORIES = [
   { id: "health-factor", label: "Health monitoring" },
 ] as const;
 export type Category = typeof CATEGORIES[number]["id"];
+export const MARKET_PROTOCOLS = ["A2A", "MCP", "X402", "MPP", "ERC8183"] as const;
+export type MarketProtocol = typeof MARKET_PROTOCOLS[number];
+export type MarketProtocolState = "advertised" | "reachable" | "hireable" | "unsupported" | "unavailable";
+export type MarketCapability = {
+  protocol: MarketProtocol;
+  endpoint: string;
+  version: string | null;
+  state: MarketProtocolState;
+  reason: string;
+};
 export function isCategory(value: unknown): value is Category {
   return CATEGORIES.some((category) => category.id === value);
 }
@@ -31,6 +41,7 @@ export type AgentSummary = {
   registry: string;
   category: Category | null;
   categorySource: "provider" | "unclassified";
+  protocols: MarketProtocol[];
   indexedAt: string | null;
   source: "8004scan" | "agon";
 };
@@ -44,6 +55,7 @@ export type AgentDetail = AgentSummary & {
   metadataStatus: "available" | "unavailable";
   active: boolean | null;
   services: { name: string; endpoint: string; version: string | null }[];
+  capabilities: MarketCapability[];
   registrationMatches: boolean | null;
 };
 export type CatalogPage = { items: AgentSummary[]; total: number; nextOffset: number | null; checkedAt: string; source: "8004scan"; warnings: string[] };

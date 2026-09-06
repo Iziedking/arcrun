@@ -5,6 +5,7 @@ import { CATEGORIES, type BnbChain, type AgentSummary, type AgentDetail, type Ca
 import { readCatalog, readAgent, checkAgentEndpoint, publishAgent } from "./client";
 import { CommerceReadinessPanel } from "./CommerceReadinessPanel";
 import { LpGuardianPanel } from "./LpGuardianPanel";
+import { deriveMarketCapabilities } from "./marketplace/capabilities";
 
 // Shared BNB-only content. The canonical host supplies AGON's approved header,
 // footer, typography and palette. No chain-specific host imports are allowed.
@@ -23,6 +24,7 @@ export function BnbMarketContent({ chainId }: { chainId: BnbChain }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState(""); const [category, setCategory] = useState("");
+  const [directMatch, setDirectMatch] = useState<AgentSummary | null>(null);
   const [retry, setRetry] = useState(0); const [checked, setChecked] = useState<string | null>(null);
   useEffect(() => {
     const controller = new AbortController(); setItems([]); setLoading(true); setError(null); setNext(null);
@@ -31,28 +33,38 @@ export function BnbMarketContent({ chainId }: { chainId: BnbChain }) {
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [chainId, retry]);
+  useEffect(() => {
+    const exactId = query.trim();
+    if (!/^(0|[1-9][0-9]{0,77})$/.test(exactId)) { setDirectMatch(null); return; }
+    const controller = new AbortController();
+    setDirectMatch(null);
+    readAgent(chainId, exactId, controller.signal).then((agent) => setDirectMatch(agent)).catch(() => { if (!controller.signal.aborted) setDirectMatch(null); });
+    return () => controller.abort();
+  }, [chainId, query]);
   async function more() {
     if (next === null || loading) return; setLoading(true); setError(null);
     try { const page = await readCatalog(chainId, next); setItems((old) => [...new Map([...old, ...page.items].map((a) => [a.id, a])).values()]); setNext(page.nextOffset); }
     catch (e) { setError(message(e)); } finally { setLoading(false); }
   }
-  const visible = items.filter((a) => (!category || a.category === category) && `${a.name} ${a.description} ${a.id}`.toLowerCase().includes(query.trim().toLowerCase()));
+  const searchable = [...new Map([...items, ...(directMatch ? [directMatch] : [])].map((agent) => [agent.id, agent])).values()];
+  const visible = searchable.filter((a) => (!category || a.category === category) && `${a.name} ${a.description} ${a.id}`.toLowerCase().includes(query.trim().toLowerCase()));
   return <>
     <div className="border-y border-[color:var(--hairline-strong)] py-5">
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <label className="font-mono text-[10px] uppercase tracking-widest text-ink-3">SEARCH LOADED AGENTS<input className={`${INPUT} mt-2`} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Name, skill, or agent ID" /></label>
+        <label className="font-mono text-[10px] uppercase tracking-widest text-ink-3">SEARCH AGENTS<input className={`${INPUT} mt-2`} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Name, skill, or exact agent ID" /></label>
         <label className="font-mono text-[10px] uppercase tracking-widest text-ink-3">CATEGORY<select className={`${INPUT} mt-2`} value={category} onChange={(e) => setCategory(e.target.value)}><option value="">All categories</option>{CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
       </div>
       <div className="mt-4 flex flex-wrap gap-2" aria-label="Agent outcomes">{CATEGORIES.map((c) => <button key={c.id} aria-pressed={category === c.id} className={`${BUTTON} ${category === c.id ? "bg-ink !text-[color:var(--canvas)]" : ""}`} onClick={() => setCategory(category === c.id ? "" : c.id)}>{c.label}</button>)}</div>
     </div>
-    <div className="my-6 flex flex-wrap justify-between gap-3 font-mono text-[10px] uppercase tracking-widest text-ink-3"><span>{loading && !items.length ? "READING BNB REGISTRY INDEX…" : `${visible.length} OF ${items.length} LOADED PROFILES`}</span><span>8004SCAN · {checked ? new Date(checked).toLocaleTimeString() : "CONNECTING"}</span></div>
-    <p className="mb-6 max-w-[85ch] font-mono text-[12px] leading-relaxed text-ink-2">Discover registered agents on this network. Registration is not a performance endorsement. Open a profile to check its onchain owner and advertised endpoints. Categories are supplied by providers, never guessed.</p>
+    <div className="my-6 flex flex-wrap justify-between gap-3 font-mono text-[10px] uppercase tracking-widest text-ink-3"><span>{loading && !items.length ? "READING BNB REGISTRY INDEX…" : `${visible.length} OF ${searchable.length} DISCOVERED PROFILES`}</span><span>8004SCAN · {checked ? new Date(checked).toLocaleTimeString() : "CONNECTING"}</span></div>
+    <p className="mb-6 max-w-[85ch] font-mono text-[12px] leading-relaxed text-ink-2">Discover registered agents on this network. Exact ID search reads the selected identity directly, even when it is outside the first index page. Registration is not a performance endorsement; categories and protocol faces are provider-supplied evidence, never guesses.</p>
     {error ? <ErrorPanel error={error} retry={() => setRetry((n) => n + 1)} /> : null}
-    {!loading && !error && !visible.length ? <div className={PANEL}><h2 className="font-stencil text-3xl uppercase">NO MATCHING PROFILES</h2><p className="mt-3 font-mono text-sm text-ink-2">No provider-classified match in the loaded profiles. Clear filters or load more agents.</p><button className={`${BUTTON} mt-4`} onClick={() => { setQuery(""); setCategory(""); }}>CLEAR FILTERS</button></div> : null}
+    {!loading && !error && !visible.length ? <div className={PANEL}><h2 className="font-stencil text-3xl uppercase">NO MATCHING PROFILES</h2><p className="mt-3 font-mono text-sm text-ink-2">No matching identity was found. Try an exact ERC-8004 ID, clear filters, or load another registry page.</p><button className={`${BUTTON} mt-4`} onClick={() => { setQuery(""); setCategory(""); }}>CLEAR FILTERS</button></div> : null}
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">{visible.map((agent) => <article className={PANEL} key={agent.id}>
       <div className="flex flex-wrap justify-between gap-3 font-mono text-[10px] uppercase tracking-widest text-ink-3"><span className="text-accent">REGISTERED IDENTITY</span><span>#{agent.id} · CHAIN {chainId}</span></div>
       <h2 className="mt-5 break-words font-stencil text-[28px] uppercase leading-tight"><a href={bnbHref(chainId, `/market/${agent.id}`)}>{agent.name}</a></h2>
       <p className="mt-3 line-clamp-3 min-h-[4.5em] font-mono text-[12px] leading-relaxed text-ink-2">{agent.description || "The provider has not supplied a description."}</p>
+      <div className="mt-4 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-widest"><span className="border border-[color:var(--hairline-strong)] px-2 py-1">{agent.category ? CATEGORIES.find((c) => c.id === agent.category)?.label : "CATEGORY UNCLASSIFIED"}</span>{(agent.protocols.length ? agent.protocols : ["ERC8004 IDENTITY"]).map((protocol) => <span className="border border-[color:var(--hairline-strong)] px-2 py-1" key={protocol}>{protocol}</span>)}</div>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--hairline)] pt-4"><span className="font-mono text-[10px] uppercase text-ink-3">OWNER {short(agent.owner)}</span><a className={BUTTON} href={bnbHref(chainId, `/market/${agent.id}`)}>INSPECT AGENT →</a></div>
     </article>)}</div>
     {next !== null ? <div className="mt-8 border-t border-[color:var(--hairline)] pt-5"><button className={BUTTON} disabled={loading} onClick={more}>{loading ? "LOADING…" : "LOAD MORE AGENTS →"}</button></div> : null}
@@ -80,9 +92,10 @@ export function BnbAgentContent({ chainId, id }: { chainId: BnbChain; id: string
         </dl></div>
         <div className={PANEL}><h3 className="font-stencil text-2xl uppercase">CHECK BEFORE YOU HIRE</h3><p className="mt-4 font-mono text-[12px] leading-relaxed text-ink-2">Check the advertised discovery endpoint without connecting a wallet. This reads the agent card or service status only: it does not run a task, grant authority, or spend funds.</p><button className={`${BUTTON} mt-5`} disabled={testing || !agent.services.some((s) => s.name.toLowerCase() === "a2a" || (s.name.toLowerCase() === "erc-8183" && new URL(s.endpoint).pathname.endsWith("/status"))) || agent.registrationMatches === false} onClick={testEndpoint}>{testing ? "CHECKING ENDPOINT…" : "CHECK AGENT ENDPOINT →"}</button>
           {proof ? <div role="status" className="mt-5 border-l-2 border-accent pl-4 font-mono text-[12px] leading-relaxed text-ink-2"><p className="uppercase text-ink">{proof.status}</p><p>{proof.message}</p><p className="mt-2">{new Date(proof.checkedAt).toLocaleString()}</p></div> : null}
-          <p className="mt-5 font-mono text-[11px] leading-relaxed text-ink-3">Hiring is not enabled for this profile until its price, execution interface, and payment contract have been verified. No invented price or transaction.</p>
+          <p className="mt-5 font-mono text-[11px] leading-relaxed text-ink-3">A listed protocol face is not a hire guarantee. Agon shows the advertised interface first, then checks endpoint freshness, payment configuration and delivery evidence before any wallet action.</p>
         </div>
       </div>
+      <section className={PANEL} aria-labelledby="capability-heading"><h3 id="capability-heading" className="font-stencil text-2xl uppercase">CAPABILITY FACES</h3><p className="mt-3 font-mono text-[12px] leading-relaxed text-ink-2">These are the interfaces this agent advertises in its ERC-8004 registration. An advertised face is discoverable; it is not automatically reachable, hireable or trusted.</p><div className="mt-5 grid gap-3 md:grid-cols-2">{(agent.capabilities.length ? agent.capabilities : deriveMarketCapabilities(agent.services)).map((capability) => <div className="border border-[color:var(--hairline)] p-4" key={capability.protocol}><div className="flex flex-wrap justify-between gap-2 font-mono text-[11px] uppercase tracking-widest"><span className="text-accent">{capability.protocol}</span><span>{capability.state}</span></div><p className="mt-3 break-all font-mono text-[11px] text-ink-3">{capability.endpoint}</p><p className="mt-3 font-mono text-[12px] leading-relaxed text-ink-2">{capability.reason}</p></div>)}</div>{!agent.capabilities.length && !agent.services.length ? <p className="mt-4 font-mono text-[12px] text-ink-2">No supported public protocol face was advertised.</p> : null}</section>
       <CommerceReadinessPanel key={`${chainId}:${id}`} chainId={chainId} agentId={id} />
       <details className={PANEL}><summary className="cursor-pointer font-mono text-[12px] uppercase tracking-widest">TECHNICAL PROOF & SERVICE ENDPOINTS</summary><dl className="mt-5 space-y-3 break-all font-mono text-[12px] text-ink-2"><dt>REGISTRY</dt><dd>{agent.registry}</dd><dt>METADATA SNAPSHOT HASH</dt><dd>{agent.versionHash ?? "Unavailable"}</dd><dt>DECLARED SERVICES</dt><dd>{agent.services.length ? agent.services.map((s) => <p className="mb-2" key={`${s.name}:${s.endpoint}`}>{s.name}: {s.endpoint}</p>) : "No supported public HTTPS service endpoints."}</dd></dl></details>
     </> : null}

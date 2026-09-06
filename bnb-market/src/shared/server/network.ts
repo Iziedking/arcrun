@@ -19,7 +19,7 @@ export function networkConfig(chainId: BnbChain) {
   const chain = chainId === 97 ? bscTestnet : bsc;
   const configured = process.env[`BNB_${chainId}_RPC_URL`]?.trim();
   return { chain, registry: BNB_REGISTRIES[chainId], contracts: sdkAddresses(chainId),
-    rpcUrls: configured ? [configured] : [...chain.rpcUrls.default.http],
+    rpcUrls: configured ? [configured] : chainId === 97 ? ["https://bsc-testnet-rpc.publicnode.com"] : [...chain.rpcUrls.default.http],
     explorer: chain.blockExplorers.default.url };
 }
 export function bnbClient(chainId: BnbChain) {

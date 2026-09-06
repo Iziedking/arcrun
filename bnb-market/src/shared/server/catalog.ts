@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { isAddress } from "viem";
 import { parseAgentId, isCategory, type BnbChain, type AgentSummary, type AgentDetail, type CatalogPage, type EndpointProof } from "../types.ts";
+import { deriveMarketCapabilities, protocolsFromValues } from "../marketplace/capabilities.ts";
 import { BNB_REGISTRIES, checkedClient, IDENTITY_ABI, networkConfig } from "./network.ts";
 import { HttpError, object, publicJson, text, httpsUrl } from "./http.ts";
 import { database } from "./store.ts";
@@ -15,8 +16,10 @@ export function parseIndexedAgent(value: unknown, chainId: BnbChain): AgentSumma
   if (row.chain_id !== chainId || text(row.contract_address).toLowerCase() !== BNB_REGISTRIES[chainId].toLowerCase() || !isAddress(text(row.owner_address))) {
     throw new HttpError(502, "The catalog returned an agent from a different registry or network.");
   }
+  const advertised = [row.supported_protocols, row.protocols, row.services].flatMap((value) => Array.isArray(value) ? value : []);
   return { id, chainId, name: text(row.name, 180) || `Agent ${id}`, description: text(row.description),
     owner: text(row.owner_address), registry: BNB_REGISTRIES[chainId], category: null, categorySource: "unclassified",
+    protocols: protocolsFromValues(advertised),
     indexedAt: typeof row.updated_at === "string" ? row.updated_at : null, source: "8004scan" };
 }
 
@@ -102,12 +105,14 @@ export async function agentDetail(chainId: BnbChain, id: string, fresh = false):
     }
     const extension = metadata?.agon && typeof metadata.agon === "object" ? metadata.agon as Record<string, unknown> : null;
     const category = isCategory(extension?.category) ? extension.category : null;
+    const capabilities = deriveMarketCapabilities(services);
     return { id, chainId, name: text(metadata?.name, 180) || `Agent ${id}`, description: text(metadata?.description),
       owner, wallet, registry: address, category, categorySource: category ? "provider" : "unclassified", indexedAt: null, source: "agon",
+      protocols: capabilities.map((capability) => capability.protocol),
       blockNumber: block.toString(), checkedAt: new Date().toISOString(), ownerMatchesIndex: false,
       uri, versionHash: metadata ? `sha256:${createHash("sha256").update(JSON.stringify(metadata)).digest("hex")}` : null,
       metadataStatus: metadata ? "available" : "unavailable", active: typeof metadata?.active === "boolean" ? metadata.active : null,
-      services, registrationMatches };
+      services, capabilities, registrationMatches };
   };
   return fresh ? read() : cached(`identity:${chainId}:${id}`, read);
 }
