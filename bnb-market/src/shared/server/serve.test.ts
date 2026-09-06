@@ -4,13 +4,15 @@ import { createBnbServer } from "./serve.ts";
 import { proxyBnb } from "./proxy.ts";
 
 test("HTTP bridge preserves cookies/origin and refuses Arc, large bodies and other methods", async () => {
-  const server = createBnbServer(async (request, chain, path) => Response.json({ chain, path, origin: request.headers.get("origin"), cookie: request.headers.get("cookie"), input: await request.json() }));
+  const server = createBnbServer(async (request, chain, path) => Response.json({ chain, path, origin: request.headers.get("origin"), cookie: request.headers.get("cookie"), input: request.method === "POST" ? await request.json() : null }));
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address(); assert.ok(address && typeof address !== "string");
   const base = `http://127.0.0.1:${address.port}`;
   try {
     const result = await fetch(`${base}/api/bnb/97/auth/nonce`, { method: "POST", headers: { origin: "https://agon.surf", cookie: "agon_bnb_97=test" }, body: "{}" });
     assert.deepEqual(await result.json(), { chain: "97", path: ["auth", "nonce"], origin: "https://agon.surf", cookie: "agon_bnb_97=test", input: {} });
+    const metadata = await fetch(`${base}/api/bnb/97/providers/lp-guardian/erc8004/registration.json`);
+    assert.deepEqual((await metadata.json()).path, ["providers", "lp-guardian", "erc8004", "registration.json"]);
     assert.equal((await fetch(`${base}/api/bnb/5042002/auth/me`)).status, 404);
     assert.equal((await fetch(`${base}/api/bnb/56/auth/me`, { method: "DELETE" })).status, 405);
     assert.equal((await fetch(`${base}/api/bnb/97/auth/nonce`, { method: "POST", body: "x".repeat(17000) })).status, 413);

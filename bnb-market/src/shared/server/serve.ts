@@ -15,7 +15,7 @@ export function createBnbServer(handler = handleBnb) {
           outgoing.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
           outgoing.end(JSON.stringify({ service: "agon-bnb", revision: process.env.AGON_RELEASE_SHA || "development" })); return;
         }
-        const match = /^\/api\/bnb\/(56|97)\/([a-zA-Z0-9/-]+)$/.exec(url.pathname);
+        const match = /^\/api\/bnb\/(56|97)\/([a-zA-Z0-9-]+(?:\/[a-zA-Z0-9-]+)*(?:\/registration\.json)?)$/.exec(url.pathname);
         if (!match) { outgoing.writeHead(404); outgoing.end(); return; }
         if (!["GET", "POST"].includes(incoming.method ?? "")) { outgoing.writeHead(405); outgoing.end(); return; }
         const chunks: Buffer[] = []; let size = 0;
