@@ -7,18 +7,18 @@ import { checkLpHiring, readLpAnalysis, startLpAnalysis } from "./client";
 const BUTTON = "inline-flex min-h-11 items-center justify-center border border-[color:var(--hairline-strong)] px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-ink hover:bg-canvas-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50";
 const INPUT = "mt-2 h-12 w-full border border-[color:var(--hairline-strong)] bg-canvas px-4 font-mono text-sm text-ink focus:outline focus:outline-2 focus:outline-accent";
 const HIRING_BLOCKERS: Record<string, string> = {
-  testnet_only: "Protected hiring is being proven on BNB Testnet before Mainnet is opened.",
-  hiring_flag_disabled: "The operator has not opened paid hiring.",
-  agent_identity_unconfigured: "The AGON-operated agent identity is not configured.",
-  provider_wallet_unconfigured: "The provider wallet is not configured.",
-  exact_price_unconfigured: "The exact service price is not configured.",
-  public_provider_url_unconfigured: "The public provider endpoint is not configured.",
-  altana_session_unconfigured: "The provider's bounded signing session is not configured.",
-  registration_not_qualified: "The onchain agent registration is not active and readable.",
-  provider_wallet_mismatch: "The registered agent wallet differs from the configured provider.",
-  provider_endpoint_mismatch: "The registered payment endpoint differs from the configured provider.",
-  registration_unavailable: "The provider registration could not be verified.",
-  provider_execution_unavailable: "The delivery worker is not live, so AGON will not let a buyer lock funds yet.",
+  testnet_only: "This service is available on BNB Testnet while it is being proven.",
+  hiring_flag_disabled: "This service is not accepting paid requests yet.",
+  agent_identity_unconfigured: "The service identity is still being set up.",
+  provider_wallet_unconfigured: "The service payment account is still being set up.",
+  exact_price_unconfigured: "The service price is still being set up.",
+  public_provider_url_unconfigured: "The service is not reachable at its public address yet.",
+  altana_session_unconfigured: "The service is not ready to sign requests yet.",
+  registration_not_qualified: "The service identity could not be confirmed.",
+  provider_wallet_mismatch: "The service payment account needs attention.",
+  provider_endpoint_mismatch: "The service address needs attention.",
+  registration_unavailable: "The service identity could not be checked right now.",
+  provider_execution_unavailable: "The service is not online for paid requests yet.",
 };
 
 function HiringReadiness({ chainId }: { chainId: BnbChain }) {
@@ -33,15 +33,15 @@ function HiringReadiness({ chainId }: { chainId: BnbChain }) {
     });
     return () => controller.abort();
   }, [chainId, retry]);
-  return <aside className="mt-6 border-t border-[color:var(--hairline-strong)] pt-5" aria-label="Protected hiring readiness">
+  return <aside className="mt-6 border-t border-[color:var(--hairline-strong)] pt-5" aria-label="Service availability">
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <div><p className="font-mono text-[10px] uppercase tracking-widest text-accent">PROTECTED HIRING</p>
-        <p className="mt-2 max-w-[85ch] font-mono text-[11px] leading-relaxed text-ink-2">A signed quote and exact-value ERC-8183 wallet flow are prepared only after every provider, contract and delivery check passes.</p></div>
-      <span className="border border-[color:var(--hairline-strong)] px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-ink-2">{readiness?.enabled ? "READY" : readiness ? "CLOSED" : error ? "CHECK FAILED" : "CHECKING…"}</span>
+      <div><p className="font-mono text-[10px] uppercase tracking-widest text-accent">USE THIS AGENT</p>
+        <p className="mt-2 max-w-[85ch] font-mono text-[11px] leading-relaxed text-ink-2">We check whether this service is ready before showing the paid action.</p></div>
+      <span className="border border-[color:var(--hairline-strong)] px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-ink-2">{readiness?.enabled ? "AVAILABLE" : readiness ? "NOT YET" : error ? "CHECK FAILED" : "CHECKING…"}</span>
     </div>
-    {error ? <div role="alert" className="mt-4 border-l-2 border-accent pl-4 font-mono text-[11px] leading-relaxed text-ink-2"><p>{error}</p><button type="button" className={`${BUTTON} mt-3`} onClick={() => setRetry((value) => value + 1)}>RETRY READINESS →</button></div> : null}
-    {readiness && !readiness.enabled ? <details className="mt-4 font-mono text-[11px] leading-relaxed text-ink-2"><summary className="min-h-11 cursor-pointer py-3 uppercase tracking-widest">WHY HIRING IS CLOSED</summary><ul className="list-disc space-y-2 pl-5">{readiness.blockers.map((blocker) => <li key={blocker}>{HIRING_BLOCKERS[blocker] ?? "A required commerce check did not pass."}</li>)}</ul></details> : null}
-    {readiness?.enabled ? <p role="status" className="mt-4 border-l-2 border-accent pl-4 font-mono text-[11px] leading-relaxed text-ink-2">Protected hiring is ready for this exact provider version at {readiness.priceDisplay} {readiness.token?.symbol}. Sign in before requesting a quote.</p> : null}
+    {error ? <div role="alert" className="mt-4 border-l-2 border-accent pl-4 font-mono text-[11px] leading-relaxed text-ink-2"><p>{error}</p><button type="button" className={`${BUTTON} mt-3`} onClick={() => setRetry((value) => value + 1)}>TRY AGAIN →</button></div> : null}
+    {readiness && !readiness.enabled ? <details className="mt-4 font-mono text-[11px] leading-relaxed text-ink-2"><summary className="min-h-11 cursor-pointer py-3 uppercase tracking-widest">WHY NOT YET?</summary><ul className="list-disc space-y-2 pl-5">{readiness.blockers.map((blocker) => <li key={blocker}>{HIRING_BLOCKERS[blocker] ?? "The service needs attention before it can accept paid requests."}</li>)}</ul></details> : null}
+    {readiness?.enabled ? <p role="status" className="mt-4 border-l-2 border-accent pl-4 font-mono text-[11px] leading-relaxed text-ink-2">Available at {readiness.priceDisplay} {readiness.token?.symbol} per request. Sign in when you are ready to continue.</p> : null}
   </aside>;
 }
 function rememberRun(id: string | null) {
@@ -92,23 +92,23 @@ export function LpGuardianPanel({ chainId }: { chainId: BnbChain }) {
   const waiting = busy || run?.status === "running";
   const report = run?.report;
   return <section className="border border-[color:var(--hairline-strong)] bg-canvas-2 p-5 sm:p-6" aria-labelledby="lp-guardian-title">
-    <p className="font-mono text-[10px] uppercase tracking-widest text-accent">AGON OPERATED / PANCAKESWAP V3</p>
-    <h2 id="lp-guardian-title" className="mt-4 font-stencil text-3xl uppercase">LP GUARDIAN</h2>
-    <p className="mt-4 max-w-[85ch] font-mono text-sm leading-relaxed text-ink-2">Check whether a liquidity position is in range. The agent reads its BNB Testnet pool, checks a 10-minute price average, and proposes a range for review when the evidence allows it.</p>
-    <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-3">Read-only analysis. No wallet needed, no funds moved. Protected hiring stays closed until the registered provider, exact price, contracts and delivery worker all pass verification.</p>
+    <p className="font-mono text-[10px] uppercase tracking-widest text-accent">LIVE POSITION CHECK</p>
+    <h2 id="lp-guardian-title" className="mt-4 font-stencil text-3xl uppercase">LIQUIDITY CHECK</h2>
+    <p className="mt-4 max-w-[85ch] font-mono text-sm leading-relaxed text-ink-2">See whether your PancakeSwap position is in range and get a suggested range to review.</p>
+    <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-3">Free read-only check. No wallet needed. Nothing in your position is changed.</p>
     {chainId !== 97 ? <p role="status" className="mt-6 border-l-2 border-accent pl-4 font-mono text-sm text-ink-2">Select BNB Testnet to run LP Guardian. It does not read Testnet positions under a Mainnet label.</p> : <>
       <form onSubmit={submit} className="mt-6 space-y-5">
         <fieldset disabled={waiting} className="grid gap-4 md:grid-cols-3">
           <legend className="sr-only">PancakeSwap Testnet position settings</legend>
-          <label className="font-mono text-[11px] uppercase text-ink-2">POSITION NFT ID<input className={INPUT} required inputMode="numeric" pattern="[0-9]+" value={positionId} onChange={(e) => { clearResult(); setPositionId(e.target.value); }} placeholder="PancakeSwap position ID" /></label>
-          <label className="font-mono text-[11px] uppercase text-ink-2">RANGE HALF-WIDTH (STEPS)<input className={INPUT} required type="number" min="1" max="1000" step="1" value={width} onChange={(e) => { clearResult(); setWidth(e.target.value); }} /></label>
-          <label className="font-mono text-[11px] uppercase text-ink-2">MAX SPOT DEVIATION (TICKS)<input className={INPUT} required type="number" min="0" max="10000" step="1" value={deviation} onChange={(e) => { clearResult(); setDeviation(e.target.value); }} /></label>
+          <label className="font-mono text-[11px] uppercase text-ink-2">POSITION ID<input className={INPUT} required inputMode="numeric" pattern="[0-9]+" value={positionId} onChange={(e) => { clearResult(); setPositionId(e.target.value); }} placeholder="PancakeSwap position ID" /></label>
+          <label className="font-mono text-[11px] uppercase text-ink-2">RANGE SIZE<input className={INPUT} required type="number" min="1" max="1000" step="1" value={width} onChange={(e) => { clearResult(); setWidth(e.target.value); }} /></label>
+          <label className="font-mono text-[11px] uppercase text-ink-2">PRICE DEVIATION<input className={INPUT} required type="number" min="0" max="10000" step="1" value={deviation} onChange={(e) => { clearResult(); setDeviation(e.target.value); }} /></label>
         </fieldset>
-        <p className="max-w-[85ch] font-mono text-[11px] leading-relaxed text-ink-3">One step uses the pool's own tick spacing. Width sets the proposed range on each side of the average. Deviation is the maximum allowed gap between the current tick and that average; it is not a risk score or a profit target.</p>
-        <button className={`${BUTTON} bg-accent !text-accent-ink`} disabled={waiting}>{waiting ? "CHECKING POSITION…" : key.current && error ? "RETRY SAME ANALYSIS →" : "ANALYSE POSITION →"}</button>
+        <p className="max-w-[85ch] font-mono text-[11px] leading-relaxed text-ink-3">These settings control how wide the suggested range can be and how much price movement the check will accept.</p>
+        <button className={`${BUTTON} bg-accent !text-accent-ink`} disabled={waiting}>{waiting ? "CHECKING POSITION…" : key.current && error ? "TRY AGAIN →" : "CHECK POSITION →"}</button>
         {run && run.status !== "running" ? <button type="button" disabled={busy} className={`${BUTTON} ml-3`} onClick={clearResult}>NEW ANALYSIS</button> : null}
       </form>
-      {waiting ? <p role="status" className="mt-5 font-mono text-sm text-ink-2">Reading the position, pool and oracle at one source block. This can take up to 45 seconds.</p> : null}
+      {waiting ? <p role="status" className="mt-5 font-mono text-sm text-ink-2">Checking the latest position data. This can take up to 45 seconds.</p> : null}
       {error || run?.error ? <p role="alert" className="mt-5 border-l-2 border-accent pl-4 font-mono text-sm text-ink-2">{error ?? run?.error}</p> : null}
       {report ? <div className="mt-6 border-t border-[color:var(--hairline-strong)] pt-6">
         <p role="status" className="font-mono text-[11px] uppercase tracking-widest text-accent">{report.decision.action === "hold" ? "IN RANGE / HOLD" : report.decision.action === "review_rebalance" ? "OUT OF RANGE / REVIEW PROPOSAL" : "PROPOSAL WITHHELD"}</p>
