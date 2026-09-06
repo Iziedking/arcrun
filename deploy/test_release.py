@@ -47,6 +47,10 @@ class ReleaseBoundaryTests(unittest.TestCase):
     def test_release_starts_bnb_worker(self):
         script = (ROOT / 'deploy/release.sh').read_text()
         self.assertIn('auth indexer coordinator bnb-api bnb-lp-worker', script)
+
+    def test_bnb_image_includes_marketplace_support_modules(self):
+        dockerfile = (ROOT / 'bnb-market/Dockerfile.api').read_text()
+        self.assertIn('COPY src/shared/marketplace ./src/shared/marketplace', dockerfile)
     def test_caddy_keeps_other_products(self):
         caddy = (ROOT / 'deploy/caddy/Caddyfile').read_text()
         for host in ['api.agon.surf', 'api.arcrun.xyz', 'agentsqa.xyz', 'api.avow.site', 'api.sface.site']:
