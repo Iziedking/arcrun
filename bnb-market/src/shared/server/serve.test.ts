@@ -30,3 +30,12 @@ test("proxy forwards only active BNB cookie and never falls back on outage", asy
   assert.equal((await proxyBnb(request, "5042002", ["health"], "https://api.agon.surf", send)).status, 503);
   assert.equal((await proxyBnb(request, "97", ["health"], "https://api.agon.surf", async () => { throw new Error("credential must not leak"); })).status, 503);
 });
+test("proxy permits only the ERC-8004 registration filename with a dot", async () => {
+  const request = new Request("https://agon.surf/api/bnb/97/providers/lp-guardian/erc8004/registration.json");
+  const send: typeof fetch = async (url) => {
+    assert.equal(String(url), "https://api.agon.surf/api/bnb/97/providers/lp-guardian/erc8004/registration.json");
+    return Response.json({ ok: true });
+  };
+  assert.equal((await proxyBnb(request, "97", ["providers", "lp-guardian", "erc8004", "registration.json"], "https://api.agon.surf", send)).status, 200);
+  assert.equal((await proxyBnb(request, "97", ["providers", "lp-guardian", "erc8004", "other.json"], "https://api.agon.surf", send)).status, 400);
+});

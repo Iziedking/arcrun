@@ -6,7 +6,7 @@ import { body, HttpError, json } from "./http.ts";
 export async function proxyBnb(request: Request, chain: string, parts: string[], origin: string, send = fetch) {
   try {
     const chainId = parseChain(chain);
-    if (!parts.length || parts.some((part) => !/^[a-zA-Z0-9-]+$/.test(part))) return json({ error: "Invalid BNB route." }, 400);
+    if (!parts.length || parts.some((part, index) => !/^[a-zA-Z0-9-]+$/.test(part) && !(index === parts.length - 1 && part === "registration.json"))) return json({ error: "Invalid BNB route." }, 400);
     const upstream = new URL(origin);
     if (upstream.protocol !== "https:" || upstream.username || upstream.password || upstream.pathname !== "/" || upstream.search || upstream.hash) throw new Error("Invalid upstream");
     const target = new URL(`/api/bnb/${chainId}/${parts.join("/")}`, upstream);
