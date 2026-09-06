@@ -8,7 +8,7 @@ import { database } from "./store.ts";
 // @bnbagent/sdk 0.5.5 ERC8004Agent.getAllAgents, dist/chunk-TKWQT3DN.js.
 // Real response inspected 2026-09-04: {items, total, limit, offset}; www host
 // returned a 308 to 8004scan.io. Index scores never become AGON verification.
-const SCAN = "https://8004scan.io/api/v1";
+const SCAN = "https://api.8004scan.io/api/v1";
 export function parseIndexedAgent(value: unknown, chainId: BnbChain): AgentSummary {
   const row = object(value);
   const id = parseAgentId(row.token_id);
