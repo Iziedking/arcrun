@@ -4,13 +4,14 @@ import test from "node:test";
 import {
   AGON_DEFAULT_NETWORK_KEY,
   AGON_NETWORKS,
+  getAgonBalanceTarget,
   getAgonNetworkKey,
   networkHref,
 } from "./network.ts";
 
-test("BNB Mainnet is the Agon default context", () => {
-  assert.equal(AGON_DEFAULT_NETWORK_KEY, "bnb-mainnet");
-  assert.equal(AGON_NETWORKS[AGON_DEFAULT_NETWORK_KEY].chainId, 56);
+test("BNB Testnet is the Agon default context", () => {
+  assert.equal(AGON_DEFAULT_NETWORK_KEY, "bnb-testnet");
+  assert.equal(AGON_NETWORKS[AGON_DEFAULT_NETWORK_KEY].chainId, 97);
   assert.equal(AGON_NETWORKS[AGON_DEFAULT_NETWORK_KEY].brand, "BNB");
 });
 
@@ -31,10 +32,16 @@ test("unconfigured BNB contexts cannot inherit the Arc catalog adapter", () => {
   assert.equal(AGON_NETWORKS["arc-testnet"].apiUrl !== null, true);
 });
 
+test("balance targets never fall back from BNB to Arc", () => {
+  assert.equal(getAgonBalanceTarget("bnb-mainnet"), null);
+  assert.equal(getAgonBalanceTarget("bnb-testnet"), null);
+  assert.equal(getAgonBalanceTarget("arc-testnet")?.chainId, 5042002);
+});
+
 test("network links preserve the route and replace only the network context", () => {
   assert.equal(
     networkHref("/market", "bnb-testnet", "?category=trading&network=arc-testnet"),
     "/market?category=trading&network=bnb-testnet",
   );
-  assert.equal(getAgonNetworkKey("not-a-network"), "bnb-mainnet");
+  assert.equal(getAgonNetworkKey("not-a-network"), "bnb-testnet");
 });

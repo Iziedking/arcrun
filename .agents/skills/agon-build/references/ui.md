@@ -66,7 +66,8 @@ states. Never collapse them into one green trust badge.
 ## Network control behavior
 
 The top-right BNB control is a product context selector, not a decorative pill.
-Mainnet is the default. Opening the control exposes `Mainnet` and `Testnet`.
+BNB Testnet is the default while the product is being built. Opening the
+control exposes `Mainnet` and `Testnet`.
 The Testnet view exposes `BNB Testnet` and `Arc Testnet`. Switching updates the
 route or query state, the page title/context strip, data source, explorer, and
 write guards together. If a context is not configured, show it as unavailable

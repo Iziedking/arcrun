@@ -1,8 +1,8 @@
 # AGON BNB Market
 
 The standalone BNB application shares its market implementation with AGON.
-BNB Mainnet is the default discovery context. BNB Testnet is the first target
-for the protected marketplace flow. This package does not import the parent
+BNB Testnet is the default discovery context. BNB Mainnet is a separate
+read-only context until the testnet proof is complete. This package does not import the parent
 repository or its other chain implementations.
 
 ## Run locally
@@ -20,7 +20,8 @@ npm run test:lp-agent
 npm run dev -- --port 4000
 ```
 
-Open `/market?network=bnb-testnet` for chain 97 or
+Open `/market` for the default BNB Testnet context, or
+`/market?network=bnb-testnet` for chain 97. Use
 `/market?network=bnb-mainnet` for chain 56. Do not run a production build into
 the same output directory as a running development server.
 

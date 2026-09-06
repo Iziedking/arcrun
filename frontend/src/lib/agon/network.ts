@@ -150,7 +150,7 @@ export const AGON_NETWORKS: Record<AgonNetworkKey, AgonNetworkDescriptor> = {
   },
 };
 
-export const AGON_DEFAULT_NETWORK_KEY: AgonNetworkKey = "bnb-mainnet";
+export const AGON_DEFAULT_NETWORK_KEY: AgonNetworkKey = "bnb-testnet";
 export const AGON_TESTNET_NETWORK_KEYS: readonly AgonNetworkKey[] = ["bnb-testnet", "arc-testnet"];
 
 export function isAgonNetworkKey(value: string | null | undefined): value is AgonNetworkKey {
@@ -163,6 +163,29 @@ export function getAgonNetworkKey(value: string | null | undefined): AgonNetwork
 
 export function getAgonNetwork(value: string | null | undefined): AgonNetworkDescriptor {
   return AGON_NETWORKS[getAgonNetworkKey(value)];
+}
+
+export type AgonBalanceTarget = {
+  chainId: AgonChainId;
+  tokenAddress: `0x${string}`;
+  code: "BNB" | "ARC";
+  symbol: string;
+  decimals: number;
+  label: string;
+};
+
+/** Resolve a balance target from the selected context without cross-chain fallback. */
+export function getAgonBalanceTarget(key: AgonNetworkKey): AgonBalanceTarget | null {
+  const network = AGON_NETWORKS[key];
+  if (!network.paymentAssetAddress) return null;
+  return {
+    chainId: network.chainId,
+    tokenAddress: network.paymentAssetAddress,
+    code: network.brand,
+    symbol: network.paymentAsset,
+    decimals: 6,
+    label: network.name,
+  };
 }
 
 export function networkHref(pathname: string, key: AgonNetworkKey, search = ""): string {

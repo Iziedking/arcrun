@@ -1,4 +1,4 @@
-import { BNB_CHAINS, BNB_MAINNET_ID, BNB_TESTNET_ID, type BnbChainId } from "@/lib/bnb/chains";
+import { BNB_CHAINS, DEFAULT_BNB_CHAIN, resolveBnbChain, type BnbChainId } from "@/lib/bnb/chains";
 import {
   BNB_CATEGORIES,
   BnbCategory,
@@ -16,7 +16,7 @@ type RawSearchParams =
   | null;
 
 const DEFAULT_QUERY = "";
-const DEFAULT_CHAIN = BNB_MAINNET_ID;
+const DEFAULT_CHAIN = DEFAULT_BNB_CHAIN;
 const DEFAULT_CATEGORY = "all";
 
 export type MarketCategoryFilter = BnbCategory | "all";
@@ -45,11 +45,7 @@ function getParam(params: RawSearchParams, key: string): string | null {
 }
 
 export function resolveChain(rawChain: string | null): BnbChainId {
-  const candidate = Number(rawChain || DEFAULT_CHAIN);
-  if (candidate === BNB_MAINNET_ID || candidate === BNB_TESTNET_ID) {
-    return candidate;
-  }
-  return DEFAULT_CHAIN;
+  return resolveBnbChain(rawChain || DEFAULT_CHAIN);
 }
 
 export function resolveCategory(rawCategory: string | null): MarketCategoryFilter {

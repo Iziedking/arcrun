@@ -4,12 +4,13 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { BnbMarketContent, BnbAgentContent, BnbPublishContent, BnbPlaygroundContent, bnbHref } from "@/shared/MarketContent";
 import { bnbMe, bnbLogin, bnbLogout } from "@/shared/client";
 import type { BnbChain, BnbSession } from "@/shared/types";
+import { resolveBnbChain } from "@/lib/bnb/chains";
 
 type Wallet = { request(input: { method: string; params?: unknown[] }): Promise<unknown> };
 const BUTTON = "inline-flex min-h-11 items-center justify-center border border-[color:var(--hairline-strong)] px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] hover:bg-canvas-3 disabled:opacity-50";
 function Content({ view }: { view: "market" | "detail" | "publish" | "playground" }) {
   const search = useSearchParams(); const router = useRouter(); const params = useParams<{ id?: string }>();
-  const chainId: BnbChain = search.get("network") === "bnb-testnet" || search.get("chain") === "97" ? 97 : 56;
+  const chainId: BnbChain = resolveBnbChain(search.get("network") ?? search.get("chain"));
   const [session, setSession] = useState<BnbSession | null>(null); const [loginOpen, setLoginOpen] = useState(false);
   const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
   useEffect(() => { let current = true; setSession(null); setLoginOpen(false); setError(null); bnbMe(chainId).then((r) => { if (current) setSession(r.session); }).catch(() => {}); return () => { current = false; }; }, [chainId]);

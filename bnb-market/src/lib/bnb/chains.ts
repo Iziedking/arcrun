@@ -26,7 +26,7 @@ export const BNB_CHAINS: readonly BnbNetwork[] = [
     explorer: "https://bscscan.com",
     rpc: process.env.NEXT_PUBLIC_BNB_MAINNET_RPC_URL ?? "https://bsc-dataseed.binance.org",
     nativeToken: "BNB",
-    description: "Primary public default for the hackathon build.",
+    description: "Production BNB context. Keep writes gated until the testnet proof is complete.",
     isMainnet: true,
   },
   {
@@ -43,13 +43,19 @@ export const BNB_CHAINS: readonly BnbNetwork[] = [
   },
 ] as const;
 
-export const DEFAULT_BNB_CHAIN = BNB_MAINNET_ID;
+export const DEFAULT_BNB_CHAIN = BNB_TESTNET_ID;
+
+export function resolveBnbChain(value: unknown): BnbChainId {
+  if (value === BNB_MAINNET_ID || value === "56" || value === "bnb-mainnet") return BNB_MAINNET_ID;
+  if (value === BNB_TESTNET_ID || value === "97" || value === "bnb-testnet") return BNB_TESTNET_ID;
+  return DEFAULT_BNB_CHAIN;
+}
 
 export function getBnbNetwork(chainId: number): BnbNetwork {
   const numericChainId = Number(chainId);
   const found = BNB_CHAINS.find((network) => network.id === numericChainId);
   if (!found) {
-    return BNB_CHAINS[0];
+    return BNB_CHAINS.find((network) => network.id === DEFAULT_BNB_CHAIN) ?? BNB_CHAINS[0];
   }
   return found;
 }

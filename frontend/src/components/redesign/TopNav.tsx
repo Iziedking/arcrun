@@ -18,6 +18,7 @@ import { AgonNetworkSelector } from "@/components/redesign/AgonNetworkSelector";
 import { IS_AGON_DEPLOYMENT } from "@/lib/product";
 import { useDisconnect } from "wagmi";
 import { isAgonRoute, isLegacyArcRunRoute } from "@/lib/agon/routes";
+import { useAgonNetwork } from "@/hooks/useAgonNetwork";
 
 /// The product nav. Left: â–  ARCRUN mono wordmark with the pink square mark.
 /// Center: mono caps route links separated by 32px on desktop. Right: the
@@ -54,6 +55,7 @@ export function TopNav() {
   const isLogin = pathname === "/login";
   const isLegacyRoute = isLegacyArcRunRoute(pathname);
   const isAgon = !isLegacyRoute && (IS_AGON_DEPLOYMENT || isAgonRoute(pathname));
+  const { networkKey } = useAgonNetwork();
   const routes = isAgon ? AGON_ROUTES : LEGACY_ROUTES;
   const [open, setOpen] = useState(false);
   // The marketplace is public. Keep its route links visible before sign-in so
@@ -102,7 +104,7 @@ export function TopNav() {
         <div className="flex shrink-0 items-center gap-2 max-[359px]:gap-1">
           {isSignedIn ? (
             <>
-              <WalletBalanceChip />
+              <WalletBalanceChip networkKey={isAgon ? networkKey : undefined} />
               {!isAgon ? <ArcChainChip /> : null}
               <NotificationBell />
               <button
@@ -141,9 +143,9 @@ export function TopNav() {
       {open && showRoutes ? (
         <div className="border-t border-[color:var(--hairline)] bg-canvas md:hidden">
           <nav className="mx-auto flex max-w-[1600px] flex-col px-3 py-2 sm:px-6">
-            {/* balance up top: the nav chip is hidden on phones, so this is
-                where mobile users see their USDC. */}
-            {isSignedIn ? <WalletBalanceChip variant="row" /> : null}
+            {/* The nav chip is hidden on phones, so this is where mobile users
+                see the selected network's payment-token state. */}
+            {isSignedIn ? <WalletBalanceChip variant="row" networkKey={isAgon ? networkKey : undefined} /> : null}
             {routes.map((r) => {
               const active = pathname === r.href || (!("exact" in r) || !r.exact) && pathname.startsWith(`${r.href}/`);
               return (
