@@ -38,6 +38,24 @@ export async function handleBnb(request: Request, chain: string, parts: string[]
           paidHiring: readiness.enabled, transactions: false, hiring: readiness,
           description: "Checks a PancakeSwap v3 position and proposes a tick-aligned range for review when its price evidence passes." });
       }
+      if (path === "providers/lp-guardian/erc8004/registration.json") {
+        if (chainId !== 97) throw new HttpError(409, "LP Guardian registration is available on BNB Testnet only.");
+        const origin = new URL(request.url).origin;
+        const endpoint = process.env.BNB_LP_AGENT_PUBLIC_URL?.trim() || `${origin}/api/bnb/97/providers/lp-guardian/erc8183/status`;
+        const agentId = process.env.BNB_LP_AGENT_ID?.trim();
+        const registrations = agentId && /^(0|[1-9][0-9]*)$/.test(agentId)
+          ? [{ agentId, agentRegistry: `eip155:${chainId}:${networkConfig(chainId).registry}` }]
+          : [];
+        return json({
+          type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+          name: "AGON LP Guardian",
+          description: "Checks a PancakeSwap v3 position and proposes a tick-aligned range for review when its price evidence passes.",
+          active: true,
+          services: [{ name: "ERC8183", endpoint, version: LP_AGENT_VERSION }],
+          registrations,
+          agon: { category: "rebalancing", chainId, serviceVersion: LP_AGENT_VERSION },
+        }, 200, { "cache-control": "public, max-age=60" });
+      }
       if (path === "providers/lp-guardian/commerce") return json(await lpHiringReadiness(chainId));
       if (path === "providers/lp-guardian/erc8183/status") {
         const readiness = await lpHiringReadiness(chainId);

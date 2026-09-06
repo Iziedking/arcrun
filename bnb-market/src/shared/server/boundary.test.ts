@@ -60,3 +60,11 @@ test("public LP commerce status is honest while provider execution is unavailabl
   assert.notEqual(data.status, "available");
   assert.ok(data.blockers.length > 0);
 });
+test("public LP ERC-8004 registration advertises the ERC-8183 status endpoint", async () => {
+  const response = await handleBnb(new Request("https://agon.surf/api/bnb/97/providers/lp-guardian/erc8004/registration.json"), "97", ["providers", "lp-guardian", "erc8004", "registration.json"]);
+  assert.equal(response.status, 200);
+  const data = await response.json() as { type: string; services: { name: string; endpoint: string; version: string }[]; registrations: unknown[] };
+  assert.equal(data.type, "https://eips.ethereum.org/EIPS/eip-8004#registration-v1");
+  assert.deepEqual(data.services, [{ name: "ERC8183", endpoint: "https://agon.surf/api/bnb/97/providers/lp-guardian/erc8183/status", version: "agon-lp-guardian/1.0.0" }]);
+  assert.deepEqual(data.registrations, []);
+});
