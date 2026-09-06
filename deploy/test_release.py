@@ -38,6 +38,13 @@ class ReleaseBoundaryTests(unittest.TestCase):
         self.assertNotIn('ports:', compose)
         self.assertIn('external: true', compose)
         self.assertIn('name: deploy_default', compose)
+        self.assertIn('  bnb-lp-worker:', compose)
+        self.assertIn('/opt/arcrun/deploy/secrets:/run/agon-secrets:ro', compose)
+        self.assertIn('ALTANA_SESSION_FILE: /run/agon-secrets/altana-session.json', compose)
+
+    def test_release_starts_bnb_worker(self):
+        script = (ROOT / 'deploy/release.sh').read_text()
+        self.assertIn('auth indexer coordinator bnb-api bnb-lp-worker', script)
     def test_caddy_keeps_other_products(self):
         caddy = (ROOT / 'deploy/caddy/Caddyfile').read_text()
         for host in ['api.agon.surf', 'api.arcrun.xyz', 'agentsqa.xyz', 'api.avow.site', 'api.sface.site']:

@@ -45,6 +45,9 @@ services:
       NODE_ENV: production
       PORT: 8789
       AGON_RELEASE_SHA: ${AGON_RELEASE_SHA}
+      ALTANA_SESSION_FILE: /run/agon-secrets/altana-session.json
+    volumes:
+      - /opt/arcrun/deploy/secrets:/run/agon-secrets:ro
     restart: unless-stopped
     init: true
     stop_grace_period: 60s
@@ -65,6 +68,9 @@ services:
     environment:
       NODE_ENV: production
       AGON_RELEASE_SHA: ${AGON_RELEASE_SHA}
+      ALTANA_SESSION_FILE: /run/agon-secrets/altana-session.json
+    volumes:
+      - /opt/arcrun/deploy/secrets:/run/agon-secrets:ro
     command: ["node", "--experimental-strip-types", "scripts/lp-delivery-worker.ts"]
     restart: unless-stopped
     init: true

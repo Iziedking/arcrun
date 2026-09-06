@@ -36,6 +36,7 @@ rollback() {
   if [ -n "$previous" ] && [ -f "$previous/compose.yml" ]; then
     export AGON_RELEASE_SHA="$(basename "$previous")"
     docker compose -p deploy --env-file /opt/arcrun/deploy/.env -f "$previous/compose.yml" up -d --no-deps --wait --wait-timeout 120 auth indexer coordinator bnb-api || true
+    docker compose -p deploy --env-file /opt/arcrun/deploy/.env -f "$previous/compose.yml" up -d --no-deps --wait --wait-timeout 120 bnb-lp-worker || true
   else
     docker compose -p deploy --env-file /opt/arcrun/deploy/.env -f /opt/arcrun/deploy/docker-compose.yml up -d --no-deps auth indexer coordinator || true
     if [ -n "$previous_bnb_image" ]; then
@@ -47,7 +48,7 @@ rollback() {
 }
 trap rollback ERR
 "${compose[@]}" run --rm --no-deps migrate
-"${compose[@]}" up -d --no-deps --wait --wait-timeout 120 auth indexer coordinator bnb-api
+"${compose[@]}" up -d --no-deps --wait --wait-timeout 120 auth indexer coordinator bnb-api bnb-lp-worker
 cp "$release/Caddyfile" /opt/arcrun/deploy/caddy/Caddyfile
 docker exec arcrun-caddy caddy reload --config /etc/caddy/Caddyfile >/dev/null
 for chain in 56 97; do
