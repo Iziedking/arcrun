@@ -1,4 +1,4 @@
-import type { MarketCapability, MarketProtocol, MarketProtocolState } from "../types.ts";
+import type { Category, MarketCapability, MarketOutcomeMatch, MarketProtocol, MarketProtocolState } from "../types.ts";
 
 const PROTOCOL_ALIASES: Record<string, MarketProtocol> = {
   a2a: "A2A",
@@ -9,6 +9,28 @@ const PROTOCOL_ALIASES: Record<string, MarketProtocol> = {
   erc8183: "ERC8183",
   "erc-8183": "ERC8183",
 };
+
+const OUTCOME_MATCHES: Readonly<Record<Category, readonly string[]>> = {
+  rebalancing: ["rebalanc", "liquidity position", "lp range", "range keeper", "price range", "resets positions", "concentrated lp"],
+  "grid-trading": ["grid trading", "grid strategy", "grid order", "grid agent"],
+  "yield-optimisation": ["yield", "apr", "apy", "liquidity to the best"],
+  "health-factor": ["health factor", "liquidation", "collateral", "venus position"],
+};
+
+export function inferOutcomeMatches(name: string, description: string): MarketOutcomeMatch[] {
+  const source = `${name} ${description}`.trim().toLowerCase();
+  return (Object.entries(OUTCOME_MATCHES) as [Category, readonly string[]][])
+    .filter(([, terms]) => terms.some((term) => source.includes(term)))
+    .map(([category]) => ({
+      category,
+      source: "description" as const,
+      reason: "This outcome match comes from provider-supplied name and description text. It is not a provider-declared category or verification.",
+    }));
+}
+
+export function providerOutcomeMatch(category: Category): MarketOutcomeMatch {
+  return { category, source: "provider", reason: "The provider declared this category in the ERC-8004 registration metadata." };
+}
 
 export function normalizeMarketProtocol(value: unknown): MarketProtocol | null {
   if (typeof value !== "string") return null;

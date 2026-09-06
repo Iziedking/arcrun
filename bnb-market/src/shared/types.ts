@@ -17,6 +17,11 @@ export type MarketCapability = {
   state: MarketProtocolState;
   reason: string;
 };
+export type MarketOutcomeMatch = {
+  category: Category;
+  source: "provider" | "description";
+  reason: string;
+};
 export function isCategory(value: unknown): value is Category {
   return CATEGORIES.some((category) => category.id === value);
 }
@@ -41,6 +46,7 @@ export type AgentSummary = {
   registry: string;
   category: Category | null;
   categorySource: "provider" | "unclassified";
+  outcomeMatches: MarketOutcomeMatch[];
   protocols: MarketProtocol[];
   indexedAt: string | null;
   source: "8004scan" | "agon";
@@ -49,7 +55,7 @@ export type AgentDetail = AgentSummary & {
   wallet: string;
   blockNumber: string;
   checkedAt: string;
-  ownerMatchesIndex: boolean;
+  ownerMatchesIndex: boolean | null;
   uri: string;
   versionHash: string | null;
   metadataStatus: "available" | "unavailable";
