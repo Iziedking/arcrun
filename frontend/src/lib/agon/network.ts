@@ -151,7 +151,10 @@ export const AGON_NETWORKS: Record<AgonNetworkKey, AgonNetworkDescriptor> = {
 };
 
 export const AGON_DEFAULT_NETWORK_KEY: AgonNetworkKey = "bnb-testnet";
-export const AGON_TESTNET_NETWORK_KEYS: readonly AgonNetworkKey[] = ["bnb-testnet", "arc-testnet"];
+// Keep the hackathon selector focused on the BNB product. Arc remains a typed
+// network context and can be re-exposed after the BNB launch without changing
+// the underlying adapter or route model.
+export const AGON_TESTNET_NETWORK_KEYS: readonly AgonNetworkKey[] = ["bnb-testnet"];
 
 export function isAgonNetworkKey(value: string | null | undefined): value is AgonNetworkKey {
   return value === "bnb-mainnet" || value === "bnb-testnet" || value === "arc-testnet";

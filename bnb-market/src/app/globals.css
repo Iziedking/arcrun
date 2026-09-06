@@ -8,4 +8,8 @@ a { color: inherit; }
 button, input, select { font: inherit; }
 :root { --font-mono: var(--font-geist-mono), monospace; --font-body: var(--font-geist-sans), sans-serif; --canvas: #EEF0F4; }
 html.dark { color-scheme: dark; }
+.bnb-network-select { color-scheme: light; }
+.bnb-network-select option { background: var(--canvas); color: var(--ink); }
+html.dark .bnb-network-select { color-scheme: dark; }
+html.dark .bnb-network-select option { background: var(--canvas-2); color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
