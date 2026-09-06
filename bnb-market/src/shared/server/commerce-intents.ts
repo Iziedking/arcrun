@@ -8,6 +8,7 @@ import { sameAddress } from "./commerce-core.ts";
 import { database } from "./store.ts";
 import { HttpError } from "./http.ts";
 import { LP_AGENT_VERSION, parseLpInput, type LpInput } from "../providers/lp-core.ts";
+import { normalizeMarketProtocol } from "../marketplace/capabilities.ts";
 import { lpDeliveryConfig } from "./lp-delivery.ts";
 import { jobExpiry, lpCommerceConfig, lpNegotiationRequest, parseCommerceIntentId,
   preparedTransaction, signedQuoteFields, LP_QUOTE_TTL_SECONDS } from "./commerce-intent-core.ts";
@@ -63,7 +64,7 @@ async function providerReadiness(chainId: number): Promise<{ readiness: LpHiring
     const registered = agent.services.some((service) => {
       const endpoint = new URL(service.endpoint);
       const endpointPath = endpoint.pathname.replace(/\/+$/, "") || "/";
-      return service.name.toLowerCase() === "erc-8183" && endpoint.origin === configuredUrl.origin &&
+      return normalizeMarketProtocol(service.name) === "ERC8183" && endpoint.origin === configuredUrl.origin &&
         endpointPath === configuredPath && !endpoint.search && !endpoint.hash;
     });
     if (!registered) blockers.push("provider_endpoint_mismatch");

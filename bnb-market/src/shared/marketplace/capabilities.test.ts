@@ -5,6 +5,7 @@ import { deriveMarketCapabilities, inferOutcomeMatches, normalizeMarketProtocol,
 test("normalizes the Studio protocol faces without inventing a provider capability", () => {
   assert.equal(normalizeMarketProtocol("A2A"), "A2A");
   assert.equal(normalizeMarketProtocol("b402"), "X402");
+  assert.equal(normalizeMarketProtocol("ERC8183"), "ERC8183");
   assert.equal(normalizeMarketProtocol("erc-8183"), "ERC8183");
   assert.equal(normalizeMarketProtocol("unknown-protocol"), null);
   assert.deepEqual(protocolsFromValues(["A2A", "A2A", "MPP", "unknown"]), ["A2A", "MPP"]);
