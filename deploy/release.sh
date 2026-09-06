@@ -10,12 +10,13 @@ flock -n 9 || { echo "An AGON release is already running" >&2; exit 1; }
 incoming="/opt/agon-ci/incoming/$sha"
 release="/opt/agon-releases/$sha"
 test -f "$incoming/images.tar.gz"
+test -f "$incoming/release.compose.yml"
 test -f /opt/arcrun/deploy/bnb.env
 test -f /opt/arcrun/deploy/.env
 mkdir -p "$release"
 cd "$incoming"
 sha256sum --check SHA256SUMS
-cp /etc/agon/release.compose.yml "$release/compose.yml"
+cp "$incoming/release.compose.yml" "$release/compose.yml"
 cp Caddyfile "$release/Caddyfile"
 cp -R contracts "$release/"
 gzip -dc images.tar.gz | docker load >/dev/null

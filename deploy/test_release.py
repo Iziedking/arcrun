@@ -30,6 +30,8 @@ class ReleaseBoundaryTests(unittest.TestCase):
         self.assertIn('trap rollback ERR', script)
         self.assertIn('pg_dump', script)
         self.assertIn('--wait', script)
+        self.assertIn('test -f "$incoming/release.compose.yml"', script)
+        self.assertIn('cp "$incoming/release.compose.yml" "$release/compose.yml"', script)
     def test_bnb_environment_is_separate_and_database_is_not_exposed(self):
         compose = (ROOT / 'deploy/release.compose.yml').read_text()
         bnb = compose.split('  bnb-api:', 1)[1]
