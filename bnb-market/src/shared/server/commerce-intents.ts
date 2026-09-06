@@ -8,6 +8,7 @@ import { sameAddress } from "./commerce-core.ts";
 import { database } from "./store.ts";
 import { HttpError } from "./http.ts";
 import { LP_AGENT_VERSION, parseLpInput, type LpInput } from "../providers/lp-core.ts";
+import { lpDeliveryConfig } from "./lp-delivery.ts";
 import { jobExpiry, lpCommerceConfig, lpNegotiationRequest, parseCommerceIntentId,
   preparedTransaction, signedQuoteFields, LP_QUOTE_TTL_SECONDS } from "./commerce-intent-core.ts";
 import type { CommerceIntent, CommerceIntentState, CommerceStep, LpHiringReadiness, PreparedCommerceTransaction } from "../types.ts";
@@ -67,9 +68,11 @@ async function providerReadiness(chainId: number): Promise<{ readiness: LpHiring
     });
     if (!registered) blockers.push("provider_endpoint_mismatch");
   } catch { blockers.push("registration_unavailable"); }
-  // Funding remains closed until the provider worker can verify the funded
-  // quote, generate the report, publish its manifest and submit its hash.
-  blockers.push("provider_execution_unavailable");
+  // The worker is an independently gated process. Only keep hiring closed
+  // when the same production execution/session/deliverable checks the worker
+  // itself uses are not ready; do not leave a permanent placeholder blocker.
+  const delivery = lpDeliveryConfig();
+  if (!delivery.ready) blockers.push("provider_execution_unavailable");
   return { readiness: { chainId, status: blockers.length ? "blocked" : "available", enabled: blockers.length === 0,
     blockers: [...new Set(blockers)], agentId: configured.config.agentId, providerAddress: configured.config.providerAddress,
     token: snapshot.token, priceRaw: configured.config.priceRaw,
