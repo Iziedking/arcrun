@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { CATEGORIES, type BnbChain, type AgentSummary, type AgentDetail, type Category } from "./types";
 import { readCatalog, readAgent, publishAgent } from "./client";
 import { CommerceReadinessPanel } from "./CommerceReadinessPanel";
@@ -118,6 +119,21 @@ export function BnbPublishContent({ chainId, signedIn, signIn }: { chainId: BnbC
 }
 
 export function BnbPlaygroundContent({ chainId }: { chainId: BnbChain }) {
+  const searchParams = useSearchParams();
+  const requestedId = searchParams.get("agent")?.trim() ?? "";
+  const [focusAgent, setFocusAgent] = useState<AgentDetail | null>(null);
+  const [focusError, setFocusError] = useState<string | null>(null);
   const [input, setInput] = useState(""); const [id, setId] = useState("");
-  return <div className="space-y-6"><LpGuardianPanel key={chainId} chainId={chainId}/><div className={PANEL}><h2 className="font-stencil text-3xl uppercase">INSPECT ANOTHER PROVIDER</h2><p className="mt-4 max-w-[85ch] font-mono text-sm leading-relaxed text-ink-2">Start with a registered BNB agent ID. Inspect its onchain identity, then check the public discovery endpoint. Third-party task execution and paid runs are not enabled yet; endpoint availability does not earn a tested badge.</p><form className="mt-6 flex flex-wrap gap-3" onSubmit={(e) => { e.preventDefault(); setId(input); }}><label className="flex-1 font-mono text-[11px] uppercase">AGENT ID<input required pattern="[0-9]+" inputMode="numeric" className={`${INPUT} mt-2`} value={input} onChange={(e) => setInput(e.target.value)} placeholder="Registered ERC-8004 ID"/></label><button className={`${BUTTON} self-end`}>INSPECT AGENT →</button></form></div>{id ? <BnbAgentContent key={`${chainId}:${id}`} chainId={chainId} id={id}/> : <a className={BUTTON} href={bnbHref(chainId, "/market")}>FIND AN AGENT IN THE MARKET →</a>}</div>;
+  useEffect(() => {
+    if (!requestedId) { setFocusAgent(null); setFocusError(null); return; }
+    const controller = new AbortController();
+    setFocusAgent(null); setFocusError(null);
+    readAgent(chainId, requestedId, controller.signal)
+      .then(setFocusAgent)
+      .catch((e: unknown) => { if (!controller.signal.aborted) setFocusError(message(e)); });
+    return () => controller.abort();
+  }, [chainId, requestedId]);
+  return <div className="space-y-6">
+    <div className={PANEL}><p className="font-mono text-[10px] uppercase tracking-widest text-accent">BNB {chainId === 97 ? "TESTNET" : "MAINNET"} · LIVE TEST</p><h1 className="mt-4 font-stencil text-4xl uppercase sm:text-5xl">{focusAgent?.name ?? (requestedId ? "LOADING SERVICE…" : "TRY AN AGENT")}</h1><p className="mt-4 max-w-[72ch] font-mono text-sm leading-relaxed text-ink-2">{focusAgent ? plainServiceDescription(focusAgent.description) : requestedId ? "Loading this service…" : "Try a service before connecting your wallet."}</p><a className="mt-5 inline-flex font-mono text-[11px] uppercase tracking-widest text-ink-2 underline underline-offset-4" href={requestedId ? bnbHref(chainId, `/market/${encodeURIComponent(requestedId)}`) : bnbHref(chainId, "/market")}>{requestedId ? "← BACK TO AGENT" : "← BACK TO MARKET"}</a>{focusError ? <p role="alert" className="mt-4 font-mono text-[12px] text-[color:var(--err)]">{focusError}</p> : null}</div>
+    <LpGuardianPanel key={chainId} chainId={chainId}/><div className={PANEL}><h2 className="font-stencil text-3xl uppercase">INSPECT ANOTHER PROVIDER</h2><p className="mt-4 max-w-[85ch] font-mono text-sm leading-relaxed text-ink-2">Start with a registered BNB agent ID. Inspect its onchain identity, then check the public discovery endpoint. Third-party task execution and paid runs are not enabled yet; endpoint availability does not earn a tested badge.</p><form className="mt-6 flex flex-wrap gap-3" onSubmit={(e) => { e.preventDefault(); setId(input); }}><label className="flex-1 font-mono text-[11px] uppercase">AGENT ID<input required pattern="[0-9]+" inputMode="numeric" className={`${INPUT} mt-2`} value={input} onChange={(e) => setInput(e.target.value)} placeholder="Registered ERC-8004 ID"/></label><button className={`${BUTTON} self-end`}>INSPECT AGENT →</button></form></div>{id ? <BnbAgentContent key={`${chainId}:${id}`} chainId={chainId} id={id}/> : <a className={BUTTON} href={bnbHref(chainId, "/market")}>FIND AN AGENT IN THE MARKET →</a>}</div>;
 }
